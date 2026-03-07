@@ -1,0 +1,8 @@
+[build]
+target = "thumbv7em-none-eabihf" # specify the target binary format
+
+[target.thumbv7em-none-eabihf]
+rustflags = [
+    "-C",
+    "link-arg=-Tlink.x", # make sure link.x is included
+] # so that cortex-m-rt know where to look for the memory.x I think
