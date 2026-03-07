@@ -1,11 +1,12 @@
 #![no_std]
 #![no_main]
+mod boot;
 
 use core::panic::PanicInfo;
-use cortex_m_rt::entry;
+use rtt_target;
 
-#[entry]
-fn main() -> ! {
+#[unsafe(no_mangle)]
+unsafe fn main() -> ! {
     loop {}
 }
 

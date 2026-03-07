@@ -4,4 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-cortex-m-rt = "0.7.5"
+rtt-target = "0.6.2"
+
+[features]
+default = ['cortex-m']
+cortex-m = []
+device = []
+paint-stack = []
+set-sp = []
+set-vtor = []
+zero-init-ram = []
+armv6=[]
+armv8=[]
