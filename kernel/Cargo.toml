@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+critical-section = { version = "1.2.0", features = ["restore-state-bool"] }
 rtt-target = "0.6.2"
+kernel-macros = { path="kernel-macros", features = ["macro-debug"]}
 
 [features]
 default = ['cortex-m']

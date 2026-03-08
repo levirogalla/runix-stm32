@@ -2,7 +2,7 @@
 chip = "STM32F401RE"
 
 [default.rtt]
-enabled = false
+enabled = true
 
 [default.gdb]
 enabled = false

@@ -1,13 +1,18 @@
 #![no_std]
 #![no_main]
 mod boot;
+mod drivers;
+mod critical_section;
+mod hardware;
 
 use core::panic::PanicInfo;
-use rtt_target;
 
 #[unsafe(no_mangle)]
 unsafe fn main() -> ! {
-    loop {}
+    drivers::rtt::rtt_init_print!();
+    loop {
+        drivers::rtt::rprintln!("tes");
+    }
 }
 
 
