@@ -1,7 +1,6 @@
-use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    AttrStyle, Attribute, DeriveInput, Ident, Meta, parse::Parse, parse_macro_input,
+    Attribute, DeriveInput, Meta, parse::Parse, parse_macro_input,
     punctuated::Punctuated,
 };
 
@@ -119,17 +118,17 @@ pub fn derive_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::TokenStream
     .into()
 }
 
-#[proc_macro_derive(SafeGet, attributes(reg))]
-pub fn derive_safe_get_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::TokenStream {
+#[proc_macro_derive(SafeRead, attributes(reg))]
+pub fn derive_safe_read_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = input.ident;
     let attrs = parse_attrs(input.attrs).unwrap_or_default();
     let reg_name = attrs.name.map(|n| n.0.value()).unwrap_or_else(|| name.to_string());
     let asm_line = format!("mov {}, {}", "{}", reg_name.to_lowercase());
     quote! {
-        impl crate::hardware::registers::SafeGetReg for #name {
+        impl crate::hardware::registers::SafeReadReg for #name {
             #[inline(always)]
-            fn get() -> Self::Type {
+            fn read() -> Self::Type {
                 let reg_val: Self::Type;
                 unsafe {
                     asm!(#asm_line, out(reg) reg_val);
@@ -141,17 +140,17 @@ pub fn derive_safe_get_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::To
     .into()
 }
 
-#[proc_macro_derive(UnsafeGet, attributes(reg))]
-pub fn derive_unsafe_get_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::TokenStream {
+#[proc_macro_derive(UnsafeRead, attributes(reg))]
+pub fn derive_unsafe_read_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = input.ident;
     let attrs = parse_attrs(input.attrs).unwrap_or_default();
     let reg_name = attrs.name.map(|n| n.0.value()).unwrap_or_else(|| name.to_string());
     let asm_line = format!("mov {}, {}", "{}", reg_name.to_lowercase());
     quote! {
-        impl crate::hardware::registers::UnsafeGetReg for #name {
+        impl crate::hardware::registers::UnsafeReadReg for #name {
             #[inline(always)]
-            unsafe fn set() -> Self::Type {
+            unsafe fn read_raw() -> Self::Type {
                 let reg_val: Self::Type;
                 asm!(#asm_line, out(reg) reg_val);
                 reg_val
@@ -161,17 +160,17 @@ pub fn derive_unsafe_get_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::
     .into()
 }
 
-#[proc_macro_derive(SafeSet, attributes(reg))]
-pub fn derive_safe_set_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::TokenStream {
+#[proc_macro_derive(SafeWrite, attributes(reg))]
+pub fn derive_safe_write_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = input.ident;
     let attrs = parse_attrs(input.attrs).unwrap_or_default();
     let reg_name = attrs.name.map(|n| n.0.value()).unwrap_or_else(|| name.to_string());
     let asm_line = format!("mov {}, {}", reg_name.to_lowercase(), "{}");
     quote! {
-        impl crate::hardware::registers::SafeSetReg for #name {
+        impl crate::hardware::registers::SafeWriteReg for #name {
             #[inline(always)]
-            fn set(val: Self::Type) {
+            fn write(val: Self::Type) {
                 unsafe {
                     asm!(#asm_line, in(reg) val);
                 }
@@ -181,16 +180,16 @@ pub fn derive_safe_set_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::To
     .into()
 }
 
-#[proc_macro_derive(UnsafeSet, attributes(reg))]
-pub fn derive_unsafe_set_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::TokenStream {
+#[proc_macro_derive(UnsafeWrite, attributes(reg))]
+pub fn derive_unsafe_write_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let name = input.ident;
     let attrs = parse_attrs(input.attrs).unwrap_or_default();
     let reg_name = attrs.name.map(|n| n.0.value()).unwrap_or_else(|| name.to_string());
     let asm_line = format!("mov {}, {}", reg_name.to_lowercase(), "{}");
     quote! {
-        impl crate::hardware::registers::UnsafeSetReg for #name {
-            unsafe fn set(val: Self::Type) {
+        impl crate::hardware::registers::UnsafeWriteReg for #name {
+            unsafe fn write_raw(val: Self::Type) {
                 #[inline(always)]
                 asm!(#asm_line, in(reg) val);
             }

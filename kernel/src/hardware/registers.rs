@@ -1,17 +1,16 @@
 use core::arch::asm;
 
-use kernel_macros::{Reg, SafeGet, SafeSet};
+use kernel_macros::{Reg, SafeRead, SafeWrite, UnsafeRead};
 
-// #[derive(SafeGet)]
+// #[derive(SafeRead)]
 // #[reg(size=u32, name="_pc")]
 // struct Pc;
 
-#[derive(Reg, SafeGet, SafeSet)]
-#[reg(size=i32, name="te")]
+#[derive(Reg, UnsafeRead, SafeRead)]
 struct Pc;
 
-// impl crate::hardware::registers::SafeGetReg for Pc {
-//     fn get() -> Self::Type {
+// impl crate::hardware::registers::SafeReadReg for Pc {
+//     fn read() -> Self::Type {
 //         let pc: Self::Type;
 //         unsafe {
 //             asm!("mov {}, pc", out(reg) pc);
@@ -27,19 +26,19 @@ struct Pc;
 pub trait Reg {
     type Type;
 }
-pub trait SafeGetReg: Reg {
-    #[inline(always)]
-    fn get() -> Self::Type;
+pub trait UnsafeReadReg: Reg {
+    unsafe fn read_raw() -> Self::Type;
 }
 
-pub trait UnsafeGetReg: Reg {
-    unsafe fn get() -> Self::Type;
+pub trait SafeReadReg: UnsafeReadReg {
+    fn read() -> Self::Type;
 }
 
-pub trait SafeSetReg: Reg {
-    fn set(val: Self::Type);
+pub trait UnsafeWriteReg: Reg {
+    unsafe fn write(val: Self::Type);
 }
 
-pub trait UnsafeSetReg: Reg {
-    unsafe fn set(val: Self::Type);
+pub trait SafeWriteReg: UnsafeWriteReg {
+    fn write_raw(val: Self::Type);
 }
+
