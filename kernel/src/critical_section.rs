@@ -1,24 +1,20 @@
 use critical_section::{set_impl, Impl, RawRestoreState};
 
+use crate::hardware::registers;
+
 struct CriticalSection;
 set_impl!(CriticalSection);
 
 unsafe impl Impl for CriticalSection {
     unsafe fn acquire() -> RawRestoreState {
-        let primask: u32;
-        unsafe {
-            core::arch::asm!(
-                "mrs {0}, PRIMASK",  // Read PRIMASK
-                "cpsid i",           // Disable interrupts
-                out(reg) primask
-            );
-        }
-        (primask & (1 << 0)) != (1 << 0)
+        let state = registers::Primask::enabled();
+        registers::Primask::disable();
+        state
     }
 
     unsafe fn release(primask: RawRestoreState) {
         if primask {
-            unsafe { core::arch::asm!("cpsie i") }; // Enable interrupts
+            registers::Primask::enable();
         }
     }
 }

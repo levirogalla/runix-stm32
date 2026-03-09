@@ -4,17 +4,20 @@ use syn::{
     punctuated::Punctuated,
 };
 
+const DEFAULT_INST: &str = "mov";
+
 mod kw {
     use syn::custom_keyword;
-
     custom_keyword!(name);
     custom_keyword!(size);
+    custom_keyword!(special);
 }
 
 #[cfg_attr(feature = "macro-debug", derive(Debug))]
 enum RegArg {
     Name(RegName),
     Size(RegSize),
+    Special,
 }
 
 impl Parse for RegArg {
@@ -23,6 +26,9 @@ impl Parse for RegArg {
             Ok(RegArg::Name(input.parse::<RegName>()?))
         } else if input.peek(kw::size) {
             Ok(RegArg::Size(input.parse::<RegSize>()?))
+        } else if input.peek(kw::special){
+            _ = input.parse::<kw::special>()?;
+            Ok(RegArg::Special) 
         } else {
             Err(syn::Error::new(
                 input.span(),
@@ -37,6 +43,7 @@ impl Parse for RegArg {
 struct RegAttrs {
     name: Option<RegName>,
     size: Option<RegSize>,
+    special: bool,
 }
 
 impl Parse for RegAttrs {
@@ -44,6 +51,7 @@ impl Parse for RegAttrs {
         let args = Punctuated::<RegArg, syn::Token![,]>::parse_terminated(input)?;
         let mut reg_name: Option<RegName> = None;
         let mut reg_size: Option<RegSize> = None;
+        let mut reg_special: bool = false;
         for arg in args {
             match arg {
                 RegArg::Name(name) => {
@@ -52,11 +60,15 @@ impl Parse for RegAttrs {
                 RegArg::Size(size) => {
                     reg_size = Some(size);
                 }
+                RegArg::Special => {
+                    reg_special = true
+                }
             }
         }
         Ok(Self {
             name: reg_name,
             size: reg_size,
+            special: reg_special,
         })
     }
 }
@@ -87,17 +99,9 @@ impl Parse for RegSize {
 
 fn parse_attrs(attrs: Vec<Attribute>) -> Option<RegAttrs> {
     for attr in attrs {
-        match attr.meta {
-            // Meta::NameValue(val) => {
-            //     // println!("{:?}", val);
-            //     // Some(val.path.get_ident().unwrap().to_string())
-            // }
-            Meta::List(list) => {
-                let args: RegAttrs = list.parse_args().unwrap();
-                return Some(args);
-            }
-            _ => {
-                panic!()
+        if attr.path().is_ident("reg") {
+            if let Meta::List(list) = attr.meta {
+                return Some(list.parse_args().unwrap());
             }
         }
     }
@@ -109,10 +113,10 @@ pub fn derive_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::TokenStream
     let input = parse_macro_input!(input as DeriveInput);
     let name = input.ident;
     let attrs = parse_attrs(input.attrs).unwrap_or_default();
-    let reg_size: syn::Type = attrs.size.map(|s| s.0).unwrap_or_else(|| syn::parse_quote!(i32));
+    let reg_size: syn::Type = attrs.size.map(|s| s.0).unwrap_or_else(|| syn::parse_quote!(usize));
     quote! {
         impl crate::hardware::registers::Reg for #name {
-            type Type = #reg_size;
+            type Size = #reg_size;
         }
     }
     .into()
@@ -124,12 +128,14 @@ pub fn derive_safe_read_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::T
     let name = input.ident;
     let attrs = parse_attrs(input.attrs).unwrap_or_default();
     let reg_name = attrs.name.map(|n| n.0.value()).unwrap_or_else(|| name.to_string());
-    let asm_line = format!("mov {}, {}", "{}", reg_name.to_lowercase());
+    let reg_size = attrs.size.map(|s| s.0).unwrap_or_else(|| syn::parse_quote!(usize));
+    let reg_inst = if attrs.special { "mrs" } else { DEFAULT_INST };
+    let asm_line = format!("{} {}, {}", reg_inst, "{}", reg_name.to_lowercase());
     quote! {
         impl crate::hardware::registers::SafeReadReg for #name {
             #[inline(always)]
-            fn read() -> Self::Type {
-                let reg_val: Self::Type;
+            fn read() -> Self::Size {
+                let reg_val: Self::Size;
                 unsafe {
                     asm!(#asm_line, out(reg) reg_val);
                 }
@@ -146,12 +152,13 @@ pub fn derive_unsafe_read_reg(input: ::proc_macro::TokenStream) -> ::proc_macro:
     let name = input.ident;
     let attrs = parse_attrs(input.attrs).unwrap_or_default();
     let reg_name = attrs.name.map(|n| n.0.value()).unwrap_or_else(|| name.to_string());
-    let asm_line = format!("mov {}, {}", "{}", reg_name.to_lowercase());
+    let reg_inst = if attrs.special { "mrs" } else { DEFAULT_INST };
+    let asm_line = format!("{} {}, {}", reg_inst, "{}", reg_name.to_lowercase());
     quote! {
         impl crate::hardware::registers::UnsafeReadReg for #name {
             #[inline(always)]
-            unsafe fn read_raw() -> Self::Type {
-                let reg_val: Self::Type;
+            unsafe fn read_raw() -> Self::Size {
+                let reg_val: Self::Size;
                 asm!(#asm_line, out(reg) reg_val);
                 reg_val
             }
@@ -166,11 +173,13 @@ pub fn derive_safe_write_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::
     let name = input.ident;
     let attrs = parse_attrs(input.attrs).unwrap_or_default();
     let reg_name = attrs.name.map(|n| n.0.value()).unwrap_or_else(|| name.to_string());
-    let asm_line = format!("mov {}, {}", reg_name.to_lowercase(), "{}");
+    let reg_size = attrs.size.map(|s| s.0).unwrap_or_else(|| syn::parse_quote!(usize));
+    let reg_inst = if attrs.special { "msr" } else { DEFAULT_INST };
+    let asm_line = format!("{} {}, {}", reg_inst, reg_name.to_lowercase(), "{}");
     quote! {
         impl crate::hardware::registers::SafeWriteReg for #name {
             #[inline(always)]
-            fn write(val: Self::Type) {
+            fn write(val: Self::Size) {
                 unsafe {
                     asm!(#asm_line, in(reg) val);
                 }
@@ -186,11 +195,12 @@ pub fn derive_unsafe_write_reg(input: ::proc_macro::TokenStream) -> ::proc_macro
     let name = input.ident;
     let attrs = parse_attrs(input.attrs).unwrap_or_default();
     let reg_name = attrs.name.map(|n| n.0.value()).unwrap_or_else(|| name.to_string());
-    let asm_line = format!("mov {}, {}", reg_name.to_lowercase(), "{}");
+    let reg_inst = if attrs.special { "msr" } else { DEFAULT_INST };
+    let asm_line = format!("{} {}, {}", reg_inst, reg_name.to_lowercase(), "{}");
     quote! {
         impl crate::hardware::registers::UnsafeWriteReg for #name {
-            unsafe fn write_raw(val: Self::Type) {
-                #[inline(always)]
+            #[inline(always)]
+            unsafe fn write_raw(val: Self::Size) {
                 asm!(#asm_line, in(reg) val);
             }
         }
