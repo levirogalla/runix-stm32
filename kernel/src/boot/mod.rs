@@ -318,7 +318,7 @@ pub static __EXCEPTIONS: [Vector; 14] = [
 // to the default handler
 #[cfg(all(any(not(feature = "device"), test)))]
 #[doc(hidden)]
-#[cfg_attr(cortex_m, unsafe(link_section = ".vector_table.interrupts"))]
+#[unsafe(link_section = ".vector_table.interrupts")]
 #[unsafe(no_mangle)]
 pub static __INTERRUPTS: [unsafe extern "C" fn(); 240] = [{
     unsafe extern "C" {

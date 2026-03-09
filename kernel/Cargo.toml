@@ -9,8 +9,6 @@ rtt-target = "0.6.2"
 kernel-macros = { path="kernel-macros", features = ["macro-debug"]}
 
 [features]
-default = ['cortex-m']
-cortex-m = []
 device = []
 paint-stack = []
 set-sp = []
@@ -18,3 +16,6 @@ set-vtor = []
 zero-init-ram = []
 armv6=[]
 armv8=[]
+
+[build-dependencies]
+cc = "1.2.56"

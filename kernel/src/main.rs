@@ -1,22 +1,23 @@
 #![no_std]
 #![no_main]
 mod boot;
-mod drivers;
 mod critical_section;
+mod drivers;
+mod exceptions;
 mod hardware;
+mod user_api;
 
-use core::panic::PanicInfo;
+use core::{arch::asm, panic::PanicInfo};
 
 #[unsafe(no_mangle)]
 unsafe fn main() -> ! {
     drivers::rtt::rtt_init_print!();
     loop {
-        drivers::rtt::rprintln!("tes");
+        unsafe { asm!("svc #1") }
     }
 }
 
-
 #[panic_handler]
 fn panic_handler(_info: &PanicInfo) -> ! {
-    loop { }
+    loop {}
 }
