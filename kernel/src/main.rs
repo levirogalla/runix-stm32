@@ -1,6 +1,8 @@
 #![no_std]
 #![no_main]
-mod boot;
+
+mod boot; // brings start code into compilation
+
 mod critical_section;
 mod drivers;
 mod exceptions;
