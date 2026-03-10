@@ -224,28 +224,6 @@ pub unsafe extern "C" fn DefaultHandler_() -> ! {
     loop {}
 }
 
-/* Exceptions */
-pub enum Exception {
-    NonMaskableInt,
-
-    // Not overridable
-    // HardFault,
-    MemoryManagement,
-
-    BusFault,
-
-    UsageFault,
-
-
-    SVCall,
-
-    DebugMonitor,
-
-    PendSV,
-
-    SysTick,
-}
-
 unsafe extern "C" {
     // defined earlier in the assembly
     fn Reset() -> !;
