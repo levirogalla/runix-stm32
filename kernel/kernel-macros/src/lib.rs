@@ -108,6 +108,13 @@ fn parse_attrs(attrs: Vec<Attribute>) -> Option<RegAttrs> {
     None
 }
 
+// =================================================================================================
+// Actual Macro Functions
+// Note: I actually think that making macros for the safe and unsafe read/write impl's isn't
+// required because they are sub traits of the unsafe one, mean the unsafe version will always
+// be implemented and we can just wrap it in the default implementation in the actual trait
+// =================================================================================================
+
 #[proc_macro_derive(Reg, attributes(reg))]
 pub fn derive_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
@@ -128,7 +135,7 @@ pub fn derive_safe_read_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::T
     let name = input.ident;
     let attrs = parse_attrs(input.attrs).unwrap_or_default();
     let reg_name = attrs.name.map(|n| n.0.value()).unwrap_or_else(|| name.to_string());
-    let reg_size = attrs.size.map(|s| s.0).unwrap_or_else(|| syn::parse_quote!(usize));
+    // let reg_size = attrs.size.map(|s| s.0).unwrap_or_else(|| syn::parse_quote!(usize));
     let reg_inst = if attrs.special { "mrs" } else { DEFAULT_INST };
     let asm_line = format!("{} {}, {}", reg_inst, "{}", reg_name.to_lowercase());
     quote! {
@@ -173,7 +180,7 @@ pub fn derive_safe_write_reg(input: ::proc_macro::TokenStream) -> ::proc_macro::
     let name = input.ident;
     let attrs = parse_attrs(input.attrs).unwrap_or_default();
     let reg_name = attrs.name.map(|n| n.0.value()).unwrap_or_else(|| name.to_string());
-    let reg_size = attrs.size.map(|s| s.0).unwrap_or_else(|| syn::parse_quote!(usize));
+    // let reg_size = attrs.size.map(|s| s.0).unwrap_or_else(|| syn::parse_quote!(usize));
     let reg_inst = if attrs.special { "msr" } else { DEFAULT_INST };
     let asm_line = format!("{} {}, {}", reg_inst, reg_name.to_lowercase(), "{}");
     quote! {

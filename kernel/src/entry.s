@@ -9,7 +9,10 @@ SVCall:
 	ite eq // tbh i don't really understand this instruction, but it does a condtional check to see if we are using msp or psp, then passes it to my function
 	mrseq r0, msp // opposite
 	mrsne r0, psp // do mrs command if test was not equal
-    //  syscall_entry(sp); we pass sp so that we can load the exception frame in the handler
+    ite eq
+    moveq r1, #1 // in mode enum 1 means users mode
+    movne r1, #0 // in Mode enum 0 means kernel mode
+    //  syscall_entry(sp, mode); we pass sp so that we can load the exception frame in the handler
     b syscall_entry // we also don't need to save the scratch registers because the rust compiler knows that they must be restored when it exists the syscall (or better said, we tell it to using extern "C")
 
 .global PendSV

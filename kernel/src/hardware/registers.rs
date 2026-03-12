@@ -43,7 +43,7 @@ pub struct Msp;
 #[derive(Reg, UnsafeRead)]
 #[reg(special)]
 pub struct Psp;
-#[derive(Reg, UnsafeRead)]
+#[derive(Reg, UnsafeRead, UnsafeWrite)]
 pub struct Lr;
 #[derive(Reg, UnsafeRead)]
 pub struct Pc;

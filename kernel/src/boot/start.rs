@@ -20,7 +20,6 @@ macro_rules! cfg_global_asm {
 }
 
 // This reset vector is the initial entry point after a system reset.
-// Calls an optional user-provided __pre_init and then initialises RAM.
 // If the target has an FPU, it is enabled.
 // Finally jumps to the user main function.
 cfg_global_asm! {
@@ -120,4 +119,3 @@ cfg_global_asm! {
     ".cfi_endproc
      .size Reset, . - Reset",
 }
-
